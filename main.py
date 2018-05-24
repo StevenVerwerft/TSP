@@ -6,6 +6,8 @@ import copy
 
 
 def main():
+
+    # write an arg parser
     if sys.argv[1]:
         n_cities = int(sys.argv[1])
     else:
@@ -14,11 +16,9 @@ def main():
     cities = [random.sample(range(100), 2) for x in range(n_cities)]
 
     # generate distance matrix
-    d_matrix = distance_matrix(cities)  # will be modified by greedy algorithm
+    d_matrix = distance_matrix(cities)  # fix modification by greedy search
     distances = copy.deepcopy(d_matrix)
-    # make diagonal infinity
-    for i in range(n_cities):
-        d_matrix[i, i] = np.inf
+
 
     # get nearest city
     def greedy_search(cities, distance_matrix):
@@ -90,7 +90,6 @@ def main():
     plt.subplot(122)
     plt.plot([city[0] for city in newCoordinates], [city[1] for city in newCoordinates], 'o-')
     plt.show()
-
 
 
 if __name__ == '__main__':

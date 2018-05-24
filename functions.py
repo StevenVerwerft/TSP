@@ -6,11 +6,22 @@ def euclidean_distance(point1, point2):
 
 
 def distance_matrix(city_array):
+    """
+
+    :param city_array: Array containing coordinates for the different cities
+    :return: matrix with euclidean distances between each city ( = right-triangular matrix)
+    """
     N = len(city_array)
+
+    # start with an matrix filled with zeros
     matrix = np.zeros(shape=(N, N))
+
+    # append the matrix with right-triangular elements (assumption distance matrix is symmetrical)
     for i in range(N-1):
+        matrix[i, i] = np.inf  # distance on diagonal (between same cities) to infinite
         for j in range(i+1, N):
             matrix[i, j] = euclidean_distance(city_array[i], city_array[j])
+
     return matrix
 
 
@@ -44,7 +55,7 @@ def two_opt(route, move):
     return newRoute
 
 
-def  swap(route, move):
+def swap(route, move):
 
     assert move[0] < move[1], 'move pair not increasing'
     newRoute = route[:move[0]] + route[move[1]: move[1]+1] + route[move[0]+1: move[1]] + route[move[0]: move[0]+1] \
