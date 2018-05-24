@@ -44,7 +44,7 @@ def two_opt(route, move):
     return newRoute
 
 
-def  swap(route, move):
+def swap(route, move):
 
     assert move[0] < move[1], 'move pair not increasing'
     newRoute = route[:move[0]] + route[move[1]: move[1]+1] + route[move[0]+1: move[1]] + route[move[0]: move[0]+1] \
