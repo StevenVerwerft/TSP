@@ -1,6 +1,7 @@
 import numpy as np
+np.set_printoptions(linewidth=150)
 import random
-
+import matplotlib.pyplot as plt
 
 def euclidean_distance(point1, point2):
     return np.sqrt(sum([(point1[0] - point2[0]) ** 2, (point1[1] - point2[1]) ** 2]))
@@ -21,8 +22,9 @@ def distance_matrix(city_array):
     for i in range(N - 1):
         matrix[i, i] = np.inf  # distance on diagonal (between same cities) to infinite
         for j in range(i + 1, N):
-            matrix[i, j] = euclidean_distance(city_array[i], city_array[j])
+            matrix[i, j] = round(euclidean_distance(city_array[i], city_array[j]))
 
+    matrix[N-1, N-1] = np.inf
     return matrix
 
 
@@ -78,7 +80,7 @@ def greedy_search(coordinates, distance_matrix):
 
     # 1 pick random first city
     starting = random.choice(range(n_cities))
-
+    print('starting city: ', starting)
     route_indices.append(starting)
 
     # The city coordinates are adjusted simultanously with the route, alternatively this can be done in the end
@@ -118,10 +120,9 @@ def greedy_search(coordinates, distance_matrix):
     return route_indices, route_coordinates
 
 
-def local_search(route, distance_matrix, coordinates, move_type='2-opt'):
-    max_iter = 100000
+def local_search(route, distance_matrix, coordinates, move_type='2-opt', max_iter=300000):
+
     oldRoute = route.copy()
-    print(oldRoute)
     coordinates = coordinates.copy()
     for i in range(max_iter):
         [a, b] = sorted(random.sample(range(len(route)), 2))
@@ -140,3 +141,22 @@ def local_search(route, distance_matrix, coordinates, move_type='2-opt'):
             coordinates = two_opt(coordinates, [a, b])
 
     return oldRoute, coordinates
+
+
+def plot_coordinates(coordinate_array):
+    # 1 check if first and last point is the same city
+    if coordinate_array[0] != coordinate_array[-1]:
+        coordinate_array.append(coordinate_array[0])
+
+    # make seperate arrays for x and y coordinates
+    x, y = np.array([city[0] for city in coordinate_array]), np.array([city[1] for city in coordinate_array])
+
+    # dotted style for the cities
+    plt.plot(x, y, 'o')
+
+    # show the path with arrows
+    plt.quiver(x[:-1], y[:-1], x[1:] - x[:-1],
+               y[1:] - y[:-1], scale_units='xy', angles='xy', scale=1, color='#1F77B4')
+
+    # give the first city a different color
+    plt.scatter(x[0], y[0], c='black', s=100)
