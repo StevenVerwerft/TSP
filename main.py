@@ -1,5 +1,6 @@
 from functions import *
 import random
+random.seed(10)
 import matplotlib.pyplot as plt
 import sys
 import copy
@@ -18,26 +19,20 @@ def main():
     # generate distance matrix
     d_matrix = distance_matrix(cities)  # fix modification by greedy search
     distances = copy.deepcopy(d_matrix)
-    print(d_matrix)
     # GREEDY SEARCH
     solution, solution_coordinates = greedy_search(cities, d_matrix)
     solution_coordinates.append(solution_coordinates[0])
-    print('total distance = ', total_distance(solution, distances))
-    print(sorted(solution))
-    quit()
-    plt.figure(1)
 
+    plt.figure(1)
     plt.subplot(121)
-    plt.plot([city[0] for city in solution_coordinates], [city[1] for city in solution_coordinates], 'o-')
+    plot_coordinates(coordinate_array=solution_coordinates)
 
     # LOCAL SEARCH
     solution_coordinates.pop(-1)
     newRoute, newCoordinates = local_search(solution, distances, solution_coordinates, move_type="2-opt")
-    print(newRoute)
-    print(distances)
-    newCoordinates.append(newCoordinates[0])
+
     plt.subplot(122)
-    plt.plot([city[0] for city in newCoordinates], [city[1] for city in newCoordinates], 'o-')
+    plot_coordinates(coordinate_array=newCoordinates)
     plt.show()
 
 
