@@ -35,7 +35,7 @@ def main():
         while len(solution) < len(cities):
 
             previous = solution[-1]
-            neighbours = np.append(d_matrix[:previous,previous], d_matrix[previous, previous:])
+            neighbours = np.append(d_matrix[:previous, previous], d_matrix[previous, previous:])
             next = np.argmin(neighbours)  # position of nearest neighbour
             print('next: ', next)
             solution.append(next)
@@ -44,15 +44,53 @@ def main():
 
         return solution, solution_coordinates
 
-    def local_search(route, distance_matrix, move_type='2-opt'):
-        pass
+    def local_search(route, distance_matrix, coordinates, move_type='2-opt'):
 
+        max_iter = 100000
+        oldRoute = route.copy()
+        print(oldRoute)
+        coordinates = coordinates.copy()
+        for i in range(max_iter):
+
+
+            [a, b] = sorted(random.sample(range(len(route)), 2))
+
+            # 2-opt: reverse order of route between move points
+            if move_type == '2-opt':
+                newRoute = two_opt(oldRoute, [a, b])
+            # swap: swap cities on move points
+            if move_type == 'swap':
+                newRoute = route[:a] + route[b:b+1] + route[a+1:b] + route[a:a+1] + route[b:]
+
+            if total_distance(newRoute, distance_matrix) - total_distance(oldRoute, distance_matrix) < 0:
+                print('better route found!')
+                print('total distance: ', total_distance(newRoute, distance_matrix))
+                oldRoute = newRoute
+                coordinates = two_opt(coordinates, [a, b])
+
+        return oldRoute, coordinates
+
+
+    # GREEDY SEARCH
     solution, solution_coordinates = greedy_search(cities, d_matrix)
     solution_coordinates.append(solution_coordinates[0])
     del d_matrix  # delete garbage
     print('total distance = ', total_distance(solution, distances))
+    plt.figure(1)
+
+    plt.subplot(121)
     plt.plot([city[0] for city in solution_coordinates], [city[1] for city in solution_coordinates], 'o-')
+
+    # LOCAL SEARCH
+    solution_coordinates.pop(-1)
+    newRoute, newCoordinates = local_search(solution, distances, solution_coordinates, move_type="2-opt")
+    print(newRoute)
+    print(distances)
+    newCoordinates.append(newCoordinates[0])
+    plt.subplot(122)
+    plt.plot([city[0] for city in newCoordinates], [city[1] for city in newCoordinates], 'o-')
     plt.show()
+
 
 
 if __name__ == '__main__':

@@ -18,9 +18,8 @@ def get_pairs(array):
     pairs = []
     for i in range(len(array)):
         try:
-            pairs.append((array[i], array[i+1]))
+            pairs.append(sorted([array[i], array[i+1]]))
         except IndexError:
-            print('something went wrong')
             pass
     return pairs
 
@@ -36,3 +35,18 @@ def get_distances(pairs, distance_matrix):
 def total_distance(solution, distance_matrix):
 
     return sum(get_distances(get_pairs(solution), distance_matrix))
+
+
+def two_opt(route, move):
+
+    assert move[0] < move[1], 'move pair not increasing: ({}, {})'.format(move[0], move[1])
+    newRoute = route[:move[0]] + list(reversed(route[move[0]: move[1]+1])) + route[move[1]+1:]
+    return newRoute
+
+
+def  swap(route, move):
+
+    assert move[0] < move[1], 'move pair not increasing'
+    newRoute = route[:move[0]] + route[move[1]: move[1]+1] + route[move[0]+1: move[1]] + route[move[0]: move[0]+1] \
+               + route[move[1]+1:]
+    return newRoute
