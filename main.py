@@ -1,6 +1,6 @@
 from functions import *
 import random
-random.seed(10)
+#random.seed(10)
 import matplotlib.pyplot as plt
 import sys
 import copy
@@ -13,8 +13,13 @@ def main():
         n_cities = int(sys.argv[1])
     else:
         n_cities = 100
-    # generate cities (15 cities to start)
-    cities = [random.sample(range(100), 2) for x in range(n_cities)]
+
+    if sys.argv[2]:
+        filename = sys.argv[2]
+        cities = readfile(filename)
+    else:
+        print('random generated sample will be used')
+        cities = [random.sample(range(100), 2) for x in range(n_cities)]
 
     # generate distance matrix
     d_matrix = distance_matrix(cities)  # fix modification by greedy search
@@ -29,7 +34,8 @@ def main():
 
     # LOCAL SEARCH
     solution_coordinates.pop(-1)
-    newRoute, newCoordinates = local_search(solution, distances, solution_coordinates, move_type="2-opt")
+    newRoute, newCoordinates = local_search(solution, distances, solution_coordinates, move_type="2-opt",
+                                            max_iter=50000, max_time=10)
 
     plt.subplot(122)
     plot_coordinates(coordinate_array=newCoordinates)
