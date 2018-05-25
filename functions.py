@@ -1,7 +1,35 @@
 import numpy as np
-np.set_printoptions(linewidth=150)
 import random
 import matplotlib.pyplot as plt
+import time
+np.set_printoptions(linewidth=150)
+
+
+def readfile(filename):
+    # Open input file
+    infile = open(filename, 'r')
+
+    # Read instance header
+
+    Name = infile.readline().strip().split()[1]  # NAME
+    FileType = infile.readline().strip().split()[1]  # TYPE
+    Comment = infile.readline().strip().split()[1]  # COMMENT
+    Dimension = infile.readline().strip().split()[1]  # DIMENSION
+    EdgeWeightType = infile.readline().strip().split()[1]  # EDGE_WEIGHT_TYPE
+    infile.readline()
+
+    # Read node list
+    nodelist = []
+    N = int(Dimension)
+    for i in range(0, N):
+        x, y = infile.readline().strip().split()[1:]
+        nodelist.append((float(x), float(y)))
+
+    # Close input file
+    infile.close()
+
+    return nodelist
+
 
 def euclidean_distance(point1, point2):
     return np.sqrt(sum([(point1[0] - point2[0]) ** 2, (point1[1] - point2[1]) ** 2]))
@@ -120,11 +148,26 @@ def greedy_search(coordinates, distance_matrix):
     return route_indices, route_coordinates
 
 
-def local_search(route, distance_matrix, coordinates, move_type='2-opt', max_iter=300000):
+def local_search(route, distance_matrix, coordinates, move_type='2-opt', max_iter=300000, max_time=None):
+
+    global goalfunctions_local_search
+    goalfunctions_local_search = []
+
+    if max_time:
+        starttime = time.time()
+        max_iter = np.inf
+        time_interval = range(1, int(max_time)+1)
+        print(time_interval)
 
     oldRoute = route.copy()
     coordinates = coordinates.copy()
-    for i in range(max_iter):
+    i = 1
+    while i < max_iter:
+        i += 1
+        if max_time:
+            if (time.time() - starttime) > max_time:
+                break
+
         [a, b] = sorted(random.sample(range(len(route)), 2))
 
         # 2-opt: reverse order of route between move points
@@ -135,11 +178,14 @@ def local_search(route, distance_matrix, coordinates, move_type='2-opt', max_ite
             newRoute = route[:a] + route[b:b + 1] + route[a + 1:b] + route[a:a + 1] + route[b:]
 
         if total_distance(newRoute, distance_matrix) - total_distance(oldRoute, distance_matrix) < 0:
-            print('better route found!')
-            print('total distance: ', total_distance(newRoute, distance_matrix))
+            # print('better route found!')
+            # print('total distance: ', total_distance(newRoute, distance_matrix))
             oldRoute = newRoute
             coordinates = two_opt(coordinates, [a, b])
 
+    if max_time:
+        print('calculation time (seconds): {}s'.format(round(time.time() - starttime), 4))
+        print('total iterations (thousands): ', round(i / 1000))
     return oldRoute, coordinates
 
 
