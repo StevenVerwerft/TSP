@@ -72,7 +72,8 @@ def distance_from_geo(point1, point2, measure='km'):
     a = haversine(d_phi + np.cos(phi_1)*np.cos(phi_2)*haversine(d_lambda))
     d = 2 * radius * np.arcsin(np.sqrt(a))
 
-    return d
+    test = int(radius * np.arccos(.5 * ((1. + np.cos(d_lambda)) * np.cos(d_phi) - (1. + np.cos(d_lambda)) * np.cos(phi_1 + phi_2)) + 1.))
+    return test
 
 
 def to_degrees(point):
