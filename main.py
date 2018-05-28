@@ -13,9 +13,17 @@ def main():
 
     """
 
+    # Default values:
+    n_cities = 100
+    cities = [random.sample(range(100), 2) for x in range(n_cities)]
+    iters = 30e3
+    max_time = 10
+    first_x = None
+
     # otpion parser (only short options)
     try:
-        opts, args = getopt.getopt(sys.argv[1:], "n:i:")
+        opts, args = getopt.getopt(sys.argv[1:], "n:i:r:t:x:")
+        print(opts)
     except getopt.GetoptError as err:
             print(err)
             sys.exit(2)
@@ -23,33 +31,46 @@ def main():
     for o, a in opts:
         if o == '-n':
             n_cities = int(a)
-        else:
-            n_cities = 100
-        if o == '-i':
+
+        elif o == '-i':
             filename = a
-            cities = readfile(filename)
-        else:
-            print('random generated TSP will be used')
-            cities = [random.sample(range(100), 2) for x in range(n_cities)]
+            cities, edgeweighttype = readfile(filename)
+
+        elif o == '-r':
+            iters = int(a)
+
+        elif o == '-t':
+            max_time = float(a)
+
+        elif o == '-x':
+            first_x = int(a)
 
     # generate distance matrix
-    d_matrix = distance_matrix(cities)  # fix modification by greedy search
+    d_matrix = distance_matrix(cities, distance_type=edgeweighttype, measure='km')  # fix modification by greedy search
     distances = copy.deepcopy(d_matrix)
     # GREEDY SEARCH
     solution, solution_coordinates = greedy_search(cities, d_matrix)
     solution_coordinates.append(solution_coordinates[0])
 
     plt.figure(1)
-    plt.subplot(121)
+    plt.subplot(221)
     plot_coordinates(coordinate_array=solution_coordinates)
 
     # LOCAL SEARCH
     solution_coordinates.pop(-1)
-    newRoute, newCoordinates = local_search(solution, distances, solution_coordinates, move_type="2-opt",
-                                            max_iter=50000, max_time=10)
+    newRoute, newCoordinates, BestGoalfunctionValues, AllGoalfunctionValues = \
+        local_search(solution, distances, solution_coordinates, move_type="2-opt",
+                                            max_iter=iters, max_time=max_time, first_x=first_x)
 
-    plt.subplot(122)
+    plt.subplot(222)
     plot_coordinates(coordinate_array=newCoordinates)
+
+    plt.subplot(223)
+    plt.plot(range(len(BestGoalfunctionValues)), BestGoalfunctionValues)
+
+    plt.subplot(224)
+    plt.plot(range(len(AllGoalfunctionValues)), AllGoalfunctionValues, zorder=1, lw=.5)
+    plt.scatter(0, BestGoalfunctionValues[0], c='red', zorder=2)
     plt.show()
 
 
