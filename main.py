@@ -4,22 +4,33 @@ import random
 import matplotlib.pyplot as plt
 import sys
 import copy
+import getopt
 
 
 def main():
+    """
+        Usage:
 
-    # write an arg parser
-    if sys.argv[1]:
-        n_cities = int(sys.argv[1])
-    else:
-        n_cities = 100
+    """
 
-    if sys.argv[2]:
-        filename = sys.argv[2]
-        cities = readfile(filename)
-    else:
-        print('random generated sample will be used')
-        cities = [random.sample(range(100), 2) for x in range(n_cities)]
+    # otpion parser (only short options)
+    try:
+        opts, args = getopt.getopt(sys.argv[1:], "n:i:")
+    except getopt.GetoptError as err:
+            print(err)
+            sys.exit(2)
+
+    for o, a in opts:
+        if o == '-n':
+            n_cities = int(a)
+        else:
+            n_cities = 100
+        if o == '-i':
+            filename = a
+            cities = readfile(filename)
+        else:
+            print('random generated TSP will be used')
+            cities = [random.sample(range(100), 2) for x in range(n_cities)]
 
     # generate distance matrix
     d_matrix = distance_matrix(cities)  # fix modification by greedy search
