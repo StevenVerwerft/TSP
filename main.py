@@ -17,12 +17,13 @@ def main():
     n_cities = 100
     cities = [random.sample(range(100), 2) for x in range(n_cities)]
     iters = 30e3
-    max_time = 10
+    max_time = None
     first_x = None
+    edgeweighttype = None
 
     # otpion parser (only short options)
     try:
-        opts, args = getopt.getopt(sys.argv[1:], "n:i:r:t:x:")
+        opts, args = getopt.getopt(sys.argv[1:], "n:i:r:t:x:h")
         print(opts)
     except getopt.GetoptError as err:
             print(err)
@@ -44,6 +45,11 @@ def main():
 
         elif o == '-x':
             first_x = int(a)
+
+        elif o == '-h':
+            print('-i [inputfile] -n [num cities (optional)] -r [iterations (default=30e3)] '
+                  '-t [max time (default=None)] -x [first x (default=None)]')
+            sys.exit(2)
 
     # generate distance matrix
     d_matrix = distance_matrix(cities, distance_type=edgeweighttype, measure='km')  # fix modification by greedy search
