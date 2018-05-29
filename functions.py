@@ -2,6 +2,8 @@ import numpy as np
 import random
 import matplotlib.pyplot as plt
 import time
+from math import radians, sqrt, sin, cos, atan2
+
 np.set_printoptions(linewidth=150)
 
 
@@ -50,42 +52,22 @@ def euclidean_distance(point1, point2):
     return np.sqrt(sum([(point1[0] - point2[0]) ** 2, (point1[1] - point2[1]) ** 2]))
 
 
-def distance_from_geo(point1, point2, measure='km'):
+def geodistance(point1, point2):
 
-    lon1, lon2 = to_degrees(point1[1]), to_degrees(point2[1])
-    lat1, lat2 = to_degrees(point1[0]), to_degrees(point2[0])
+    lon1, lon2 = radians(point1[1]), radians(point2[1])
+    lat1, lat2 = radians(point1[0]), radians(point2[0])
 
-    if measure == 'km':
-        radius = 6378.388
-    elif measure == 'miles':
-        radius = 3959
+    dlon = lon1 - lon2
 
-    dtr = np.pi / 180.
-    phi_1 = lat1 * dtr
-    phi_2 = lat2 * dtr
-    lambda_1 = lon1 * dtr
-    lambda_2 = lon2 * dtr
+    radius = 6372.833
 
-    d_phi = phi_2 - phi_1
-    d_lambda = lambda_2 - lambda_1
-
-    a = haversine(d_phi + np.cos(phi_1)*np.cos(phi_2)*haversine(d_lambda))
-    d = 2 * radius * np.arcsin(np.sqrt(a))
-
-    test = int(radius * np.arccos(.5 * ((1. + np.cos(d_lambda)) * np.cos(d_phi) - (1. + np.cos(d_lambda)) * np.cos(phi_1 + phi_2)) + 1.))
-    return test
-
-
-def to_degrees(point):
-
-    deg = int(point + .5)
-    min = point - deg
-    new_point = deg + (5./3. * min)
-    return new_point
-
-
-def haversine(angle):
-    return np.sin(angle/2.)**2
+    y = sqrt(
+        (cos(lat2) * sin(dlon)) ** 2
+        + (cos(lat1) * sin(lat2) - sin(lat1) * cos(lat2) * cos(dlon)) ** 2
+        )
+    x = sin(lat1) * sin(lat2) + cos(lat1) * cos(lat2) * cos(dlon)
+    c = atan2(y, x)
+    return radius * c
 
 
 def distance_matrix(city_array, distance_type=None, measure='km'):
@@ -113,7 +95,7 @@ def distance_matrix(city_array, distance_type=None, measure='km'):
         for i in range(N - 1):
             matrix[i, i] = np.inf
             for j in range(i +1, N):
-                matrix[i, j] = round(distance_from_geo(city_array[i], city_array[j], measure=measure))
+                matrix[i, j] = round(geodistance(city_array[i], city_array[j]))
 
         matrix[N-1, N-1] = np.inf
 
@@ -149,6 +131,7 @@ def two_opt(route, move):
 
 
 def swap(route, move):
+
     assert move[0] < move[1], 'move pair not increasing'
     newRoute = route[:move[0]] + route[move[1]: move[1] + 1] + route[move[0] + 1: move[1]] + route[move[0]: move[0] + 1] \
                + route[move[1] + 1:]
@@ -221,7 +204,8 @@ def local_search(route, distance_matrix, coordinates, move_type='2-opt', max_ite
     BestGoalfunctionValues = [oldRouteDistance]
     AllGoalfunctionValues = [oldRouteDistance]
 
-
+    # initial goal function value
+    print("starting goalfunction value: {}".format(total_distance(route, distance_matrix)))
     # memories
     if first_x:
         firstXMemory = []
@@ -251,12 +235,6 @@ def local_search(route, distance_matrix, coordinates, move_type='2-opt', max_ite
         if move_type == '2-opt':
             # make a temporary new route by two-opting the two randomly chosen cities
             newRoute = two_opt(oldRoute, move)
-
-        # swap: swap cities on move points
-        elif move_type == 'swap':
-            # make a temporary new route by swapping the two randomly chosen cities
-            a, b = move[0], move[1]
-            newRoute = route[:a] + route[b:b + 1] + route[a + 1:b] + route[a:a + 1] + route[b:]
 
         # check if the goalfunction of the new route is smaller than the goalfunction of the oldroute
         newRouteDistance = total_distance(newRoute, distance_matrix)
