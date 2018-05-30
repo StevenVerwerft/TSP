@@ -58,7 +58,18 @@ def main():
     solution, solution_coordinates = greedy_search(cities, d_matrix)
     solution_coordinates.append(solution_coordinates[0])
 
-    plt.figure(1)
+    # ITERATED GREEDY SEARCH
+    solutionMemory = []
+    for i in range(250):
+        solution, solution_coordinates = greedy_search(cities, d_matrix)
+        solution_coordinates.append(solution_coordinates[0])
+        solutionMemory.append((solution, solution_coordinates))
+    solutionMemory = sorted(solutionMemory, key=lambda x: total_distance(x[0], distances))
+
+    solution, solution_coordinates = solutionMemory[0]
+
+
+    plt.figure(0)
     plt.subplot(221)
     plot_coordinates(coordinate_array=solution_coordinates)
 
@@ -68,6 +79,43 @@ def main():
         local_search(solution, distances, solution_coordinates, move_type="2-opt",
                                             max_iter=iters, max_time=max_time, first_x=first_x)
 
+    plt.subplot(222)
+    plot_coordinates(coordinate_array=newCoordinates)
+    plt.subplot(223)
+    plt.plot(range(len(BestGoalfunctionValues)), BestGoalfunctionValues)
+    plt.subplot(224)
+    plt.plot(range(len(AllGoalfunctionValues)), AllGoalfunctionValues, zorder=1, lw=.5)
+    plt.scatter(0, BestGoalfunctionValues[0], c='red', zorder=2)
+
+
+
+    plt.figure(1)
+    plt.subplot(221)
+    plot_coordinates(coordinate_array=solution_coordinates)
+
+    # LOCAL SEARCH
+    solution_coordinates.pop(-1)
+    newRoute, newCoordinates, BestGoalfunctionValues, AllGoalfunctionValues = \
+        local_search2(solution, distances, solution_coordinates, move_type="2-opt",
+                                            max_iter=iters, max_time=max_time, first_x=first_x)
+
+    plt.subplot(222)
+    plot_coordinates(coordinate_array=newCoordinates)
+    plt.subplot(223)
+    plt.plot(range(len(BestGoalfunctionValues)), BestGoalfunctionValues)
+    plt.subplot(224)
+    plt.plot(range(len(AllGoalfunctionValues)), AllGoalfunctionValues, zorder=1, lw=.5)
+    plt.scatter(0, BestGoalfunctionValues[0], c='red', zorder=2)
+
+
+    # Tabu SEARCH
+    solution_coordinates.pop(-1)
+    newRoute, newCoordinates, BestGoalfunctionValues, AllGoalfunctionValues = \
+        tabu_search(solution, distances, solution_coordinates, max_iter=iters, max_time=max_time, tabu_tenure=10)
+
+    plt.figure(2)
+    plt.subplot(221)
+    plot_coordinates(solution_coordinates)
     plt.subplot(222)
     plot_coordinates(coordinate_array=newCoordinates)
 
