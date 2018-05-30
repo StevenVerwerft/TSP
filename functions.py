@@ -138,6 +138,25 @@ def swap(route, move):
     return newRoute
 
 
+def plot_coordinates(coordinate_array):
+    # 1 check if first and last point is the same city
+    if coordinate_array[0] != coordinate_array[-1]:
+        coordinate_array.append(coordinate_array[0])
+
+    # make seperate arrays for x and y coordinates
+    x, y = np.array([city[0] for city in coordinate_array]), np.array([city[1] for city in coordinate_array])
+
+    # dotted style for the cities
+    plt.plot(x, y, 'o')
+
+    # show the path with arrows
+    plt.quiver(x[:-1], y[:-1], x[1:] - x[:-1],
+               y[1:] - y[:-1], scale_units='xy', angles='xy', scale=1, color='#1F77B4')
+
+    # give the first city a different color
+    plt.scatter(x[0], y[0], c='black', s=100)
+
+
 def greedy_search(coordinates, distance_matrix):
     """
     :param coordinates: Array containing the coordinates of the cities
@@ -207,6 +226,7 @@ def local_search(route, distance_matrix, coordinates, move_type='2-opt', max_ite
     # initial goal function value
     print("starting goalfunction value: {}".format(total_distance(route, distance_matrix)))
     # memories
+
     if first_x:
         firstXMemory = []
 
@@ -268,20 +288,165 @@ def local_search(route, distance_matrix, coordinates, move_type='2-opt', max_ite
     return oldRoute, coordinates, BestGoalfunctionValues, AllGoalfunctionValues
 
 
-def plot_coordinates(coordinate_array):
-    # 1 check if first and last point is the same city
-    if coordinate_array[0] != coordinate_array[-1]:
-        coordinate_array.append(coordinate_array[0])
+def local_search2(route, distance_matrix, coordinates, move_type='2-opt', max_iter=300000, max_time=None,
+                 first_x=None):
+    # auxiliary variables
+    n_cities = len(route)  # the amount of different cities in the TSP
+    oldRouteDistance = total_distance(route, distance_matrix)
+    BestGoalfunctionValues = [oldRouteDistance]
+    AllGoalfunctionValues = [oldRouteDistance]
+    movepool = [(i, j) for i in range(n_cities-1) for j in range(i+1, n_cities)]
+    random.shuffle(movepool)
 
-    # make seperate arrays for x and y coordinates
-    x, y = np.array([city[0] for city in coordinate_array]), np.array([city[1] for city in coordinate_array])
+    # initial goal function value
+    print("starting goalfunction value: {}".format(total_distance(route, distance_matrix)))
+    # memories
 
-    # dotted style for the cities
-    plt.plot(x, y, 'o')
+    if first_x:
+        firstXMemory = []
 
-    # show the path with arrows
-    plt.quiver(x[:-1], y[:-1], x[1:] - x[:-1],
-               y[1:] - y[:-1], scale_units='xy', angles='xy', scale=1, color='#1F77B4')
+    # stopping criterion = time
+    if max_time:
+        starttime = time.time()
+        max_iter = np.inf
+        time_interval = range(1, int(max_time) + 1)
+        print(time_interval)
 
-    # give the first city a different color
-    plt.scatter(x[0], y[0], c='black', s=100)
+
+    # to be checked if these variables stay 'local' or if deepcopy is necessary
+    oldRoute = route.copy()
+    coordinates = coordinates.copy()
+    i = 1
+    j = 1
+    while i < max_iter:
+        i += 1
+        if max_time:
+            if (time.time() - starttime) > max_time:
+                break
+
+        # pick two random cities in the existing route
+        # each position in the route list refers to a unique city
+        base = random.randint(0, len(movepool)-1)
+        for move in movepool[base:] + movepool[:base]:
+
+            # 2-opt: reverse order of route between move points
+            if move_type == '2-opt':
+                # make a temporary new route by two-opting the two randomly chosen cities
+                newRoute = two_opt(oldRoute, move)
+
+            # check if the goalfunction of the new route is smaller than the goalfunction of the oldroute
+            newRouteDistance = total_distance(newRoute, distance_matrix)
+            AllGoalfunctionValues.append(newRouteDistance)  # memory for all visitied solutions
+
+            if newRouteDistance - oldRouteDistance < 0:
+                if not first_x:
+                    # local search performs best improvement strategy
+                    oldRoute = newRoute
+                    coordinates = two_opt(coordinates, move)
+                    oldRouteDistance = newRouteDistance
+                    BestGoalfunctionValues.append(oldRouteDistance)
+                    break
+
+                if first_x:
+                    # local search performs first x improvement strategy
+                    firstXMemory.append((move, newRouteDistance))
+                    if len(firstXMemory) == first_x:
+                        # pick the best solution from the memory
+                        # sort the moves in the first x memory by ascending goalfunction value
+                        firstXMemory = sorted(firstXMemory, key=lambda x: x[1])
+                        best_move = firstXMemory[0][0]
+                        oldRoute = two_opt(oldRoute, best_move)
+                        oldRouteDistance = firstXMemory[0][1]
+                        BestGoalfunctionValues.append(oldRouteDistance)
+
+    if max_time:
+        print('calculation time (seconds): {}s'.format(round(time.time() - starttime), 4))
+        print('total iterations: {:.2E}'.format(i))
+
+    print('final goalfunction value: ', BestGoalfunctionValues[-1])
+    return oldRoute, coordinates, BestGoalfunctionValues, AllGoalfunctionValues
+
+
+def tabu_search(route, distance_matrix, coordinates, max_iter, max_time=None, random_order=True, tabu_tenure=100):
+
+    # auxiliary variables
+    nCities = len(route)
+    currentRouteDistance = total_distance(route, distance_matrix)
+    bestGoalfunctionValues = [currentRouteDistance]
+    allGoalfunctionValues = [currentRouteDistance]
+
+    # intitial value
+    print('starting value: {}'.format(currentRouteDistance))
+
+    # initialize tabu memory
+    tabuMemory = []
+
+    # initialize movepool
+    movePool = [(i, j) for i in range(nCities-1) for j in range(i+1, nCities)]
+    random.shuffle(movePool)
+
+    # stopping criterium = time
+    if max_time:
+        starttime = time.time()
+        max_iter = np.inf
+        time_interval = range(1, int(max_time)+1)
+
+    currentRoute = route.copy()
+    coordinates = coordinates.copy()
+    i = 1
+    j = 1
+    while i < max_iter:
+        i += 1
+        localOptimum = True
+        if max_time:
+            ts = time.time()
+            if (ts - starttime) > max_time:
+                break
+
+            # random order implementation
+            if random_order:
+                base = random.randint(0, len(movePool)-1)
+            else:
+                base = 0
+
+            for move in movePool[base:] + movePool[:base]:
+                j += 1
+                newRoute = two_opt(currentRoute, move)
+                newrouteDistance = total_distance(newRoute, distance_matrix)
+                allGoalfunctionValues.append(newrouteDistance)
+
+                if (newrouteDistance < currentRouteDistance) and move not in tabuMemory:
+                    print('better solution found')
+                    tabuMemory.append(move)
+                    if len(tabuMemory) > tabu_tenure:
+                        tabuMemory.pop(0)
+
+                    bestGoalfunctionValues.append(newrouteDistance)
+
+                    currentRouteDistance = newrouteDistance
+                    currentRoute = newRoute
+                    coordinates = two_opt(coordinates, move)
+
+                    localOptimum = False
+                    break
+
+            if localOptimum:
+                # perform some random moves as perturbation and restart the search
+                perturbationIntensity = 1  # number of random moves selected in perturbation
+                moves = random.sample(movePool, perturbationIntensity)
+                for move in moves:
+                    currentRoute = two_opt(currentRoute, move)
+                    coordinates = two_opt(coordinates, move)
+                    tabuMemory.append(move)
+                    if len(tabuMemory) > tabu_tenure:
+                        tabuMemory.pop(0)
+
+                currentRouteDistance = total_distance(currentRoute, distance_matrix)
+                bestGoalfunctionValues.append(currentRouteDistance)
+
+    if max_time:
+        print('Calculation time (seconds): {}s'.format(round(time.time() - starttime), 2))
+        print('Total iterations: {:.2E}'.format(j))
+        print('Final goalfunction value: {}'.format(min(bestGoalfunctionValues)))
+
+    return currentRoute, coordinates, bestGoalfunctionValues, allGoalfunctionValues
